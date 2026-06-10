@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Site Manager"/>
+<meta name="theme-color" content="#1c1c1e"/>
+<title>Site Manager</title>
+<link rel="manifest" id="manifest-placeholder"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="site_manager.css"/>
+</head>
+<body>
+<div id="install-banner">
+  <span>📲 Install app on your phone!</span>
+  <button onclick="installApp()">Install</button>
+  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:transparent;color:#1a1a1a;border:1px solid #1a1a1a">✕</button>
+</div>
+<div class="hdr">
+  <p class="hdr-sub">Construction Site Manager</p>
+  <h1 class="hdr-title" id="hdr-title">Workers & Attendance</h1>
+</div>
+<div class="site-bar" id="site-bar"></div>
+<div class="summary">
+  <div class="sum-cell"><p class="sum-label">Present Today</p><p class="sum-val" id="s-present">0/0</p></div>
+  <div class="sum-cell"><p class="sum-label">Wages Earned</p><p class="sum-val" id="s-wages">₹0</p></div>
+  <div class="sum-cell"><p class="sum-label">Salary Paid</p><p class="sum-val" id="s-paid" style="color:#16a34a">₹0</p></div>
+  <div class="sum-cell"><p class="sum-label">Total Expenses</p><p class="sum-val" id="s-expenses" style="color:#ef4444">₹0</p></div>
+</div>
+<div class="date-strip" id="date-strip">
+  <span class="date-lbl">📅</span>
+  <input type="date" id="sel-date" onchange="onDateChange()"/>
+  <button class="today-btn" onclick="resetToday()">Today</button>
+</div>
+<div class="content" id="content"></div>
+<div class="bnav">
+  <button class="bnav-btn" onclick="setTab('workers')" id="tab-workers">
+    <i class="ti ti-users" style="font-size:20px;color:#E8921A"></i>
+    <span style="font-size:9px;color:#E8921A;font-weight:600">Workers</span>
+  </button>
+  <button class="bnav-btn" onclick="setTab('tasks')" id="tab-tasks">
+    <i class="ti ti-checklist" style="font-size:20px;color:#888"></i>
+    <span style="font-size:9px;color:#888">Tasks</span>
+  </button>
+  <button class="bnav-btn" onclick="setTab('diary')" id="tab-diary">
+    <i class="ti ti-notebook" style="font-size:20px;color:#888"></i>
+    <span style="font-size:9px;color:#888">Diary</span>
+  </button>
+  <button class="bnav-btn" onclick="setTab('finance')" id="tab-finance">
+    <i class="ti ti-chart-bar" style="font-size:20px;color:#888"></i>
+    <span style="font-size:9px;color:#888">Finance</span>
+  </button>
+  <button class="bnav-btn" onclick="setTab('more')" id="tab-more">
+    <i class="ti ti-dots" style="font-size:20px;color:#888"></i>
+    <span style="font-size:9px;color:#888">More</span>
+  </button>
+</div>
+<div class="overlay" id="overlay" style="display:none" onclick="closeModal(event)"></div>
+
+<script src="site_manager.js"></script>
+</body>
+</html>
