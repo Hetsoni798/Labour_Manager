@@ -16,50 +16,72 @@
 <link rel="stylesheet" href="site_manager.css"/>
 </head>
 <body>
+
+<!-- Install Banner -->
 <div id="install-banner">
   <span>📲 Install app on your phone!</span>
   <button onclick="installApp()">Install</button>
   <button onclick="document.getElementById('install-banner').style.display='none'" style="background:transparent;color:#1a1a1a;border:1px solid #1a1a1a">✕</button>
 </div>
+
+<!-- Header -->
 <div class="hdr">
-  <p class="hdr-sub">Construction Site Manager</p>
-  <h1 class="hdr-title" id="hdr-title">Workers & Attendance</h1>
+  <div class="hdr-inner">
+    <div>
+      <p class="hdr-sub">Construction Site Manager</p>
+      <h1 class="hdr-title" id="hdr-title">Workers</h1>
+    </div>
+    <div class="hdr-actions">
+      <button class="hdr-icon-btn" onclick="whatsappExport()" title="Share"><i class="ti ti-brand-whatsapp" style="font-size:18px;color:#25D366"></i></button>
+      <button class="hdr-icon-btn" onclick="openModal('expense')" title="Add Expense"><i class="ti ti-receipt" style="font-size:18px;color:#E8921A"></i></button>
+      <button class="hdr-icon-btn" onclick="openSiteSwitcher()" title="Sites"><i class="ti ti-building" style="font-size:18px;color:#aaa"></i></button>
+    </div>
+  </div>
+  <div class="site-bar" id="site-bar" style="margin:8px -14px -10px;padding:6px 14px 8px;border-top:1px solid #2a2a2a"></div>
 </div>
-<div class="site-bar" id="site-bar"></div>
+<div class="top-tabs" id="top-tabs">
+  <button class="top-tab active" onclick="setTab('workers')" id="tab-workers">
+    <i class="ti ti-users"></i><span>Workers</span>
+  </button>
+  <button class="top-tab" onclick="setTab('tasks')" id="tab-tasks">
+    <i class="ti ti-checklist"></i><span>Tasks</span>
+  </button>
+  <button class="top-tab" onclick="setTab('diary')" id="tab-diary">
+    <i class="ti ti-notebook"></i><span>Diary</span>
+  </button>
+  <button class="top-tab" onclick="setTab('finance')" id="tab-finance">
+    <i class="ti ti-chart-bar"></i><span>Finance</span>
+  </button>
+  <button class="top-tab" onclick="setTab('more')" id="tab-more">
+    <i class="ti ti-dots"></i><span>More</span>
+  </button>
+</div>
+
+<!-- Summary -->
 <div class="summary">
-  <div class="sum-cell"><p class="sum-label">Present Today</p><p class="sum-val" id="s-present">0/0</p></div>
-  <div class="sum-cell"><p class="sum-label">Wages Earned</p><p class="sum-val" id="s-wages">₹0</p></div>
-  <div class="sum-cell"><p class="sum-label">Salary Paid</p><p class="sum-val" id="s-paid" style="color:#16a34a">₹0</p></div>
-  <div class="sum-cell"><p class="sum-label">Total Expenses</p><p class="sum-val" id="s-expenses" style="color:#ef4444">₹0</p></div>
+  <div class="sum-cell"><p class="sum-label">Present</p><p class="sum-val" id="s-present">0/0</p></div>
+  <div class="sum-cell"><p class="sum-label">Wages</p><p class="sum-val" id="s-wages">₹0</p></div>
+  <div class="sum-cell"><p class="sum-label">Paid</p><p class="sum-val" id="s-paid" style="color:#4ade80">₹0</p></div>
+  <div class="sum-cell"><p class="sum-label">Expenses</p><p class="sum-val" id="s-expenses" style="color:#f87171">₹0</p></div>
 </div>
+
+<!-- Date Strip -->
 <div class="date-strip" id="date-strip">
   <span class="date-lbl">📅</span>
   <input type="date" id="sel-date" onchange="onDateChange()"/>
   <button class="today-btn" onclick="resetToday()">Today</button>
 </div>
+
+<!-- Content -->
 <div class="content" id="content"></div>
-<div class="bnav">
-  <button class="bnav-btn" onclick="setTab('workers')" id="tab-workers">
-    <i class="ti ti-users" style="font-size:20px;color:#E8921A"></i>
-    <span style="font-size:9px;color:#E8921A;font-weight:600">Workers</span>
-  </button>
-  <button class="bnav-btn" onclick="setTab('tasks')" id="tab-tasks">
-    <i class="ti ti-checklist" style="font-size:20px;color:#888"></i>
-    <span style="font-size:9px;color:#888">Tasks</span>
-  </button>
-  <button class="bnav-btn" onclick="setTab('diary')" id="tab-diary">
-    <i class="ti ti-notebook" style="font-size:20px;color:#888"></i>
-    <span style="font-size:9px;color:#888">Diary</span>
-  </button>
-  <button class="bnav-btn" onclick="setTab('finance')" id="tab-finance">
-    <i class="ti ti-chart-bar" style="font-size:20px;color:#888"></i>
-    <span style="font-size:9px;color:#888">Finance</span>
-  </button>
-  <button class="bnav-btn" onclick="setTab('more')" id="tab-more">
-    <i class="ti ti-dots" style="font-size:20px;color:#888"></i>
-    <span style="font-size:9px;color:#888">More</span>
-  </button>
-</div>
+
+<!-- Floating Expense Button -->
+<button class="exp-fab" onclick="openModal('expense')" id="exp-fab" title="Add Expense">
+  <i class="ti ti-receipt" style="font-size:20px"></i>
+  <span>Expense</span>
+</button>
+
+<!-- Overlay -->
 <div class="overlay" id="overlay" style="display:none" onclick="closeModal(event)"></div>
 
 <script src="site_manager.js"></script>
