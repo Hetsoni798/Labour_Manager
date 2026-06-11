@@ -111,7 +111,7 @@ function renderSiteBar(){
 }
 function openAddSiteModal(){
   const o=document.getElementById('overlay');o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr"><p class="sheet-title">🏗️ New Site</p><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button></div>
     <p class="sec-label">Site Name</p>
     <input class="inp" id="new-site-name" placeholder="e.g. Goa Project, Shop No. 3" autocomplete="off"/>
@@ -238,14 +238,15 @@ function setTab(t){
   ['workers','tasks','diary','finance','more'].forEach(x=>{
     const btn=document.getElementById('tab-'+x);
     if(!btn)return;
-    const active=x===t;
-    btn.querySelector('i').style.color=active?'#E8921A':'#888';
-    const sp=btn.querySelector('span');sp.style.color=active?'#E8921A':'#888';sp.style.fontWeight=active?'600':'400';
+    btn.classList.toggle('active',x===t);
   });
-  const titles={workers:'Workers & Attendance',tasks:'Task Assignment',diary:'Site Diary',finance:'Finance Overview',more:'More'};
+  const titles={workers:'Workers',tasks:'Tasks',diary:'Diary',finance:'Finance',more:'More'};
   document.getElementById('hdr-title').textContent=titles[t]||t;
   const showDate=['workers','tasks','diary'].includes(t);
   document.getElementById('date-strip').style.display=showDate?'flex':'none';
+  // show/hide floating expense fab only on non-finance tabs
+  const fab=document.getElementById('exp-fab');
+  if(fab)fab.style.display=t==='finance'?'none':'flex';
   renderContent();
 }
 function render(){updateSummary();renderContent();}
@@ -311,55 +312,53 @@ function whatsappExport(){
 function renderWorkers(){
   const att=selDateAtt();
   const presentCount=state.workers.filter(w=>{const a=att[w.id]||'absent';return a==='full'||a==='half';}).length;
+  const halfCount=state.workers.filter(w=>(att[w.id]||'absent')==='half').length;
+  const absentCount=state.workers.filter(w=>(att[w.id]||'absent')==='absent').length;
   const isToday=SELDATE===TODAY;
   const dateLabel=isToday?'Today':fmtDate(SELDATE);
   const alerts=getAlerts();
-  const alertsHTML=alerts.map(a=>`<div class="alert-banner"><span>${a}</span></div>`).join('');
+  const alertsHTML=alerts.map(a=>`<div class="alert-banner"><i class="ti ti-alert-triangle" style="font-size:13px;flex-shrink:0"></i><span>${a}</span></div>`).join('');
 
   const rows=state.workers.map(w=>{
     const a=att[w.id]||'absent';
-    const leftC={full:'#22c55e',half:'#E8921A',absent:'#e5e5e0'}[a];
+    const leftC={full:'#22c55e',half:'#E8921A',absent:'#e0e0dc'}[a];
     const totalEarned=calcTotalEarned(w);
     const adv=calcAdvance(w.id);
     const paid=calcSalaryPaid(w.id);
     const net=totalEarned-adv-paid;
     const {full,half}=calcWorkedDays(w);
-    const daysLabel=w.rateType==='perpiece'?'Piece rate':(full+(half>0?`+${half}×½`:'')+' days');
     const otTotal=calcOT(w.id);
-    const attBtns=w.rateType==='perpiece'?'<p style="font-size:11px;color:#be185d;margin-top:8px">⚡ Piece rate worker — attendance not tracked</p>':[
-      {v:'full',l:'Full',c:'#22c55e'},
-      {v:'half',l:'Half',c:'#E8921A'},
-      {v:'absent',l:'Absent',c:'#ef4444'}
-    ].map(b=>{
-      const on=a===b.v;
-      return `<button class="att-btn" onclick="toggleAtt('${w.id}','${b.v}')" style="${on?`background:${b.c};color:#fff;border-color:${b.c};font-weight:700`:''}">${b.l}</button>`;
-    }).join('');
     const photoHTML=w.photo
       ?`<img src="${w.photo}" class="worker-photo" onclick="openWorkerDetail('${w.id}')" style="cursor:pointer"/>`
-      :`<div class="worker-photo-placeholder" onclick="openWorkerDetail('${w.id}')" style="cursor:pointer">👷</div>`;
+      :`<div class="worker-photo-placeholder" onclick="openWorkerDetail('${w.id}')">👷</div>`;
+    const presentClass=a==='full'?'is-present':a==='half'?'is-half':'';
+    const presentLabel=a==='full'?'✓ Present':a==='half'?'◑ Half Day':'Present';
+    const attInline=w.rateType==='perpiece'
+      ?`<span style="font-size:10px;color:#be185d;font-weight:600">Piece rate</span>`
+      :`<div class="att-inline">
+          <button class="att-present-btn ${presentClass}" onclick="toggleAtt('${w.id}','full')">${presentLabel}</button>
+          <select class="att-absent-sel" onchange="handleAttSel('${w.id}',this.value)">
+            <option value="">${a==='absent'?'✗ Absent':'Absent ▾'}</option>
+            <option value="absent" ${a==='absent'?'selected':''}>✗ Absent</option>
+            <option value="half" ${a==='half'?'selected':''}>◑ Half Day</option>
+          </select>
+        </div>`;
     return `<div class="card" style="border-left:4px solid ${leftC}">
-      <div style="display:flex;gap:10px;align-items:flex-start">
+      <div class="worker-row">
         ${photoHTML}
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-                <button onclick="openWorkerDetail('${w.id}')" style="background:none;border:none;padding:0;cursor:pointer;font-weight:700;font-size:15px;color:#1a1a1a;text-decoration:underline dotted #aaa">${w.name}</button>
-                ${badgeHTML(w.type)}${rateTypeBadge(w.rateType||'perday')}
-              </div>
-              <p style="font-size:11px;color:#888;margin-top:2px">${fmtInr(w.rate)}/${w.rateType==='perpiece'?'piece':'day'} · ${daysLabel}${otTotal>0?` · OT: ${fmtInr(otTotal)}`:''}</p>
-              ${(w.skills&&w.skills.length)?`<div style="margin-top:3px">${w.skills.map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>`:''}
-            </div>
-            <div style="display:flex;gap:5px">
-              ${w.rateType!=='perpiece'?`<button class="ot-btn" onclick="openOTModal('${w.id}')">+OT</button>`:''}
-              <button class="ot-btn" onclick="sendWageSlip('${w.id}')" style="border-color:#25D366;color:#25D366;background:#f0fdf4">📲</button>
-              <button class="icon-btn" onclick="removeWorker('${w.id}')"><i class="ti ti-trash" style="font-size:14px"></i></button>
-            </div>
+        <div class="worker-info">
+          <button class="worker-name" onclick="openWorkerDetail('${w.id}')">${w.name}</button>
+          <p class="worker-role">${w.type==='karigar'?'Karigar':'Labour'} · ${fmtInr(w.rate)}/${w.rateType==='perpiece'?'piece':'day'}</p>
+          <div style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap">
+            ${badgeHTML(w.type)}
+            ${otTotal>0?`<span class="ot-btn" style="cursor:default">OT ${fmtInr(otTotal)}</span>`:''}
+            ${w.rateType!=='perpiece'?`<button class="ot-btn" onclick="openOTModal('${w.id}')">+OT</button>`:''}
           </div>
-          <div class="att-btns">${attBtns}</div>
         </div>
+        ${attInline}
+        <button class="icon-btn" onclick="removeWorker('${w.id}')" style="margin-left:4px"><i class="ti ti-trash" style="font-size:13px"></i></button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-top:10px">
+      <div class="mini-stats-row">
         <div class="mini-stat"><p class="mini-label">Earned</p><p class="mini-val">${fmtInr(totalEarned)}</p></div>
         <div class="mini-stat"><p class="mini-label">Paid</p><p class="mini-val" style="color:#16a34a">${fmtInr(paid)}</p></div>
         <div class="mini-stat"><p class="mini-label">Advance</p><p class="mini-val" style="color:#ef4444">${fmtInr(adv)}</p></div>
@@ -370,12 +369,21 @@ function renderWorkers(){
   const empty=!state.workers.length?`<div class="empty"><i class="ti ti-users"></i><p>No workers added yet</p></div>`:'';
   return `
     ${alertsHTML}
-    <div class="row-hdr">
-      <p class="row-label">${presentCount}/${state.workers.length} · <strong>${dateLabel}</strong></p>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-        <button class="fab-outline" onclick="markAllPresent()"><i class="ti ti-checks" style="font-size:14px"></i>All Present</button>
-        <button class="fab-sm" onclick="whatsappExport()"><i class="ti ti-brand-whatsapp" style="font-size:14px"></i>Share</button>
-        <button class="fab" onclick="openModal('worker')"><i class="ti ti-plus" style="font-size:14px"></i>Add</button>
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px">
+        <div>
+          <p class="present-count">${presentCount} <span style="font-size:14px;color:#888;font-weight:500">Present</span></p>
+          <p class="present-sub">📅 ${dateLabel} · ${state.workers.length} workers</p>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="fab-outline" onclick="markAllPresent()" style="font-size:11px;padding:6px 10px"><i class="ti ti-checks" style="font-size:12px"></i>All</button>
+          <button class="fab" onclick="openModal('worker')" style="font-size:12px;padding:7px 12px"><i class="ti ti-plus" style="font-size:13px"></i>Add</button>
+        </div>
+      </div>
+      <div class="att-stats-row">
+        <div class="att-stat-pill"><p class="att-stat-num" style="color:#16a34a">${presentCount}</p><p class="att-stat-lbl">Present</p></div>
+        <div class="att-stat-pill"><p class="att-stat-num" style="color:#E8921A">${halfCount}</p><p class="att-stat-lbl">Half Day</p></div>
+        <div class="att-stat-pill"><p class="att-stat-num" style="color:#ef4444">${absentCount}</p><p class="att-stat-lbl">Absent</p></div>
       </div>
     </div>
     ${rows}${empty}`;
@@ -385,6 +393,12 @@ function renderWorkers(){
 function markAllPresent(){
   if(!state.attendance[SELDATE])state.attendance[SELDATE]={};
   state.workers.filter(w=>w.rateType!=='perpiece').forEach(w=>{state.attendance[SELDATE][w.id]='full';});
+  saveData();render();
+}
+function handleAttSel(wid,val){
+  if(!val)return;
+  if(!state.attendance[SELDATE])state.attendance[SELDATE]={};
+  state.attendance[SELDATE][wid]=val;
   saveData();render();
 }
 
@@ -402,7 +416,7 @@ function openOTModal(wid){
   </div>`).join(''):`<p style="font-size:13px;color:#aaa;text-align:center;padding:10px 0">No OT recorded</p>`;
   const o=document.getElementById('overlay');
   o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr">
       <p class="sheet-title">⏱️ Overtime — ${w.name}</p>
       <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button>
@@ -482,7 +496,7 @@ function openWorkerDetail(wid){
 
   const o=document.getElementById('overlay');
   o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr">
       <div style="display:flex;align-items:center;gap:12px">
         ${photoHTML}
@@ -1086,7 +1100,7 @@ function workItemForm(wi){
 function openWorkItemModal(){
   wiUnitChoice='sqft';
   const o=document.getElementById('overlay');o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr"><p class="sheet-title">📐 Add Work Item</p><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button></div>
     ${workItemForm(null)}</div>`;
 }
@@ -1094,7 +1108,7 @@ function openEditWorkItem(wid){
   const wi=(state.workItems||[]).find(x=>x.id===wid);if(!wi)return;
   wiUnitChoice=wi.unit||'sqft';
   const o=document.getElementById('overlay');o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr"><p class="sheet-title">✏️ Edit Work Item</p><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button></div>
     ${workItemForm(wi)}</div>`;
 }
@@ -1190,7 +1204,7 @@ function deadlineBadge(wi){
 function openDeadlineModal(wid){
   const wi=(state.workItems||[]).find(x=>x.id===wid);if(!wi)return;
   const o=document.getElementById('overlay');o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr"><p class="sheet-title">📅 Set Deadline — ${wi.name}</p><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button></div>
     <p class="sec-label">Target Completion Date</p>
     <input class="inp" id="dl-date" type="date" value="${wi.deadline||''}" min="${TODAY}"/>
@@ -1216,7 +1230,7 @@ function openModal(type){
   const o=document.getElementById('overlay');
   o.style.display='flex';
   const titles={worker:'Add New Worker',task:'Assign New Task',advance:'Record Advance',expense:'Add My Expense'};
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr">
       <p class="sheet-title">${titles[type]}</p>
       <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button>
@@ -1468,7 +1482,7 @@ function disconnectDrive(){driveAccessToken=null;driveUserEmail=null;renderConte
 
 function openSetClientIdModal(){
   const o=document.getElementById('overlay');o.style.display='flex';
-  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+  o.innerHTML=`<div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div>
     <div class="sheet-hdr"><p class="sheet-title">🔑 Setup Google Drive</p><button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:#888;font-size:26px;line-height:1">×</button></div>
     <div style="background:#fff3e0;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;line-height:1.6;color:#92400e">
       <strong>One-time setup:</strong><br/>
